@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Goal-Date Listening Demo</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:#f6f7fb;color:#222}
+main{max-width:760px;margin:auto;padding:20px}
+.card{background:#fff;border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 2px 10px #0001}
+h1{font-size:1.6rem;margin:.2rem 0}.muted{color:#666;font-size:.92rem}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+input[type=date]{font-size:1rem;padding:9px;border:1px solid #bbb;border-radius:10px}
+button{font-size:1rem;padding:10px 14px;border:1px solid #aaa;border-radius:12px;background:#fff;cursor:pointer}
+button.primary{font-weight:700}
+.words{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.word{padding:8px 9px;border:1px solid #bbb;border-radius:10px;background:#fff}
+.word.sel{background:#fff2a8;border-color:#b99b00}
+.reason label{display:inline-block;margin:5px;padding:9px 12px;border:1px solid #bbb;border-radius:10px;background:#fff}
+.hidden{display:none}.answer span.weak{background:#fff2a8;border-radius:4px;padding:1px 2px}
+.schedule{font-weight:700;font-size:1.07rem}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{background:#eef1f7;padding:7px 9px;border-radius:999px}
+</style>
+</head>
+<body>
+<main>
+<h1>Goal-Date Listening Demo</h1>
+<p class="muted">弱点は局所、訓練は文脈の中で。</p>
+
+<div class="card">
+<h2>1. 目標日</h2>
+<div class="row">
+<label>今日 <input id="today" type="date"></label>
+<label>目標日 <input id="goal" type="date"></label>
+</div>
+<p id="countdown" class="schedule"></p>
+</div>
+
+<div class="card">
+<h2>2. まず自然な文を聞く</h2>
+<p class="muted">※この公開版は操作確認用です。著作権のある教材音声は入れていません。</p>
+<button id="reveal" class="primary">英文を表示</button>
+<div id="transcriptBox" class="hidden">
+<p>聞き取れなかった語をタップしてください。</p>
+<div class="words" id="words"></div>
+<div class="reason">
+<p><strong>弱点理由</strong></p>
+<label><input type="checkbox" value="sound"> 🔊 音が取れなかった</label>
+<label><input type="checkbox" value="meaning"> 🧠 意味処理が追いつかなかった</label>
+<label><input type="checkbox" value="context"> 🔗 前後の文脈が必要だった</label>
+</div>
+<button id="register" class="primary">この弱点を登録</button>
+</div>
+</div>
+
+<div class="card">
+<h2>3. 復習を模擬</h2>
+<p>数日後、同じ自然な文を聞いたあとで答えを表示します。</p>
+<button id="showAnswer">答えを見る</button>
+<p id="answer" class="answer hidden"></p>
+<p id="reasonsOut"></p>
+<div class="grade">
+<p><strong>今回どうでしたか？</strong></p>
+<button data-g="x">× 聞けない</button>
+<button data-g="d">△ 不安</button>
+<button data-g="o">○ 聞けた</button>
+</div>
+<div id="scheduleBox" class="hidden">
+<p id="next" class="schedule"></p>
+<div id="chips" class="chips"></div>
+<p class="muted">※日程ロジックは概念実証用です。将来は履歴・残日数・学習可能日・負荷上限などを反映します。</p>
+</div>
+</div>
+
+<div class="card"><button id="reset">デモをリセット</button></div>
+</main>
+
+<script>
+const toks=["But","I","didn't","have","time","to","get","my","assignment","done."];
+const today=document.getElementById('today');
+const goal=document.getElementById('goal');
+const countdown=document.getElementById('countdown');
+
+function ymdLocal(d){
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function parseDate(v){
+  const [y,m,d]=v.split('-').map(Number);
+  return new Date(y,m-1,d);
+}
+function fmt(d){return d.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});}
+function calcCountdown(){
+  if(!today.value||!goal.value)return;
+  const n=Math.round((parseDate(goal.value)-parseDate(today.value))/86400000);
+  countdown.textContent=n>=0?`目標日まであと ${n} 日`:`目標日を過ぎています`;
+}
+function initDates(){
+  const t=new Date(); t.setHours(0,0,0,0);
+  const g=new Date(t); g.setDate(g.getDate()+22);
+  today.value=ymdLocal(t); goal.value=ymdLocal(g); calcCountdown();
+}
+today.addEventListener('change',calcCountdown);
+goal.addEventListener('change',calcCountdown);
+
+const words=document.getElementById('words');
+toks.forEach((t,i)=>{
+  const b=document.createElement('button');
+  b.className='word'; b.textContent=t; b.dataset.i=i;
+  b.addEventListener('click',()=>b.classList.toggle('sel'));
+  words.appendChild(b);
+});
+document.getElementById('reveal').addEventListener('click',()=>{
+  document.getElementById('transcriptBox').classList.remove('hidden');
+});
+
+let weak=[],reasons=[];
+document.getElementById('register').addEventListener('click',()=>{
+  weak=[...document.querySelectorAll('.word.sel')].map(x=>Number(x.dataset.i));
+  reasons=[...document.querySelectorAll('.reason input:checked')].map(x=>x.value);
+  localStorage.setItem('gdWeak',JSON.stringify({weak,reasons}));
+  alert('弱点を登録しました。');
+});
+function load(){
+  try{
+    const x=JSON.parse(localStorage.getItem('gdWeak')||'{}');
+    weak=x.weak||[]; reasons=x.reasons||[];
+  }catch(e){}
+}
+document.getElementById('showAnswer').addEventListener('click',()=>{
+  load();
+  document.getElementById('answer').innerHTML=
+    toks.map((t,i)=>`<span class="${weak.includes(i)?'weak':''}">${t}</span>`).join(' ');
+  document.getElementById('answer').classList.remove('hidden');
+  const labels={
+    sound:'🔊 前回：音が取れなかった',
+    meaning:'🧠 前回：意味処理が追いつかなかった',
+    context:'🔗 前回：前後の文脈が必要だった'
+  };
+  document.getElementById('reasonsOut').innerHTML=reasons.map(r=>`<div>${labels[r]}</div>`).join('');
+});
+document.querySelectorAll('.grade button').forEach(b=>{
+  b.addEventListener('click',()=>schedule(b.dataset.g));
+});
+function schedule(g){
+  if(!today.value||!goal.value)return;
+  const t=parseDate(today.value), G=parseDate(goal.value);
+  const end=new Date(G); end.setDate(end.getDate()-1);
+  const total=Math.max(1,Math.round((end-t)/86400000));
+  const ratios=g==='x'?[.08,.20,.40,.68,1]:g==='d'?[.15,.38,.70,1]:[.28,.62,1];
+  const ds=ratios.map(r=>{
+    const d=new Date(t);
+    d.setDate(d.getDate()+Math.max(1,Math.round(total*r)));
+    return d>end?new Date(end):d;
+  });
+  const name=g==='x'?'× 聞けない':g==='d'?'△ 不安':'○ 聞けた';
+  document.getElementById('next').textContent=`${name} → 次回復習：${fmt(ds[0])}`;
+  document.getElementById('chips').innerHTML=
+    ds.map((d,i)=>`<span class="chip">${i===ds.length-1?'最終確認 ':''}${fmt(d)}</span>`).join('');
+  document.getElementById('scheduleBox').classList.remove('hidden');
+}
+document.getElementById('reset').addEventListener('click',()=>{
+  localStorage.removeItem('gdWeak');
+  location.reload();
+});
+initDates();
+</script>
+</body>
+</html>
