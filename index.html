@@ -2,170 +2,302 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Goal-Date Listening Demo</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Goal-Date Listening Demo 9</title>
 <style>
-body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;margin:0;background:#f6f7fb;color:#222}
-main{max-width:760px;margin:auto;padding:20px}
-.card{background:#fff;border-radius:16px;padding:18px;margin:14px 0;box-shadow:0 2px 10px #0001}
-h1{font-size:1.6rem;margin:.2rem 0}.muted{color:#666;font-size:.92rem}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-input[type=date]{font-size:1rem;padding:9px;border:1px solid #bbb;border-radius:10px}
-button{font-size:1rem;padding:10px 14px;border:1px solid #aaa;border-radius:12px;background:#fff;cursor:pointer}
-button.primary{font-weight:700}
-.words{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
-.word{padding:8px 9px;border:1px solid #bbb;border-radius:10px;background:#fff}
-.word.sel{background:#fff2a8;border-color:#b99b00}
-.reason label{display:inline-block;margin:5px;padding:9px 12px;border:1px solid #bbb;border-radius:10px;background:#fff}
-.hidden{display:none}.answer span.weak{background:#fff2a8;border-radius:4px;padding:1px 2px}
-.schedule{font-weight:700;font-size:1.07rem}.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.chip{background:#eef1f7;padding:7px 9px;border-radius:999px}
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#dce1ea;--blue:#315efb;--soft:#edf2ff;--yellow:#fff0a8;--green:#eaf8ef}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;line-height:1.55}
+.wrap{max-width:760px;margin:auto;padding:16px 12px 48px}
+h1{font-size:24px;line-height:1.35;margin:4px 0 8px}
+.kicker,.step{font-size:12px;font-weight:800;color:var(--blue);letter-spacing:.02em}
+.sub,.note{color:var(--muted);font-size:13px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-top:12px;box-shadow:0 1px 2px rgba(0,0,0,.02)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label.field{font-size:13px;font-weight:800}
+input[type=date]{width:100%;padding:11px;border:1px solid var(--line);border-radius:11px;font-size:16px;background:#fff;margin-top:5px}
+.count{background:var(--soft);border-radius:12px;padding:12px;text-align:center;font-weight:800;margin-top:10px}
+audio{width:100%;margin:8px 0}
+.center{text-align:center;font-weight:700}
+details{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+summary{font-weight:800;min-height:44px;display:flex;align-items:center;cursor:pointer}
+.text,.review{font-size:21px;line-height:2;margin-top:10px}
+.words{display:flex;flex-wrap:wrap;gap:7px;margin:9px 0}
+.word{position:relative}
+.word input{position:absolute;opacity:0;pointer-events:none}
+.word span{display:block;border:1px solid var(--line);border-radius:999px;padding:7px 10px;font-size:18px;background:#fff}
+.word input:checked+span{background:var(--soft);outline:2px solid var(--blue);border-color:var(--blue)}
+.causes{display:grid;gap:8px;margin-top:10px}
+.cause{display:block;border:1px solid var(--line);border-radius:14px;padding:12px}
+.cause input{margin-right:8px;transform:scale(1.2)}
+.cause:has(input:checked){background:var(--soft);border-color:var(--blue)}
+.context{margin-top:12px;padding:10px;border:1px dashed var(--line);border-radius:14px}
+.primary,.secondary{width:100%;border:0;border-radius:13px;padding:13px;margin-top:14px;font-size:16px;font-weight:800}
+.primary{background:var(--blue);color:#fff}
+.secondary{background:#eef1f6;color:var(--text)}
+.status{margin-top:12px;padding:12px;border-radius:12px;background:#f8fafc;font-size:14px}
+.review-word.marked{background:var(--yellow);border-radius:4px;padding:1px 2px}
+.badges{display:grid;gap:8px;margin-top:12px}
+.badge{padding:9px 11px;border-radius:10px;background:#f8fafc;border:1px solid var(--line);font-size:14px;font-weight:700}
+.grade{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.grade button{border:1px solid var(--line);border-radius:12px;padding:12px 4px;background:#fff;font-weight:800;font-size:15px}
+.grade button.active{outline:2px solid var(--blue);background:var(--soft);border-color:var(--blue)}
+.schedule{margin-top:14px;padding:14px;border-radius:14px;background:var(--green);border:1px solid #cdebd6}
+.schedule h3{margin:0 0 6px;font-size:17px}
+.schedule-row{display:flex;flex-wrap:wrap;gap:7px;margin-top:9px}
+.date-chip{background:#fff;border:1px solid #cfe1d3;border-radius:999px;padding:7px 10px;font-weight:700;font-size:14px}
+.next-big{font-size:20px;font-weight:900;margin:6px 0}
+.warn{background:#fff7e8;border:1px solid #f0d7a6;border-radius:12px;padding:11px;font-size:13px;margin-top:10px}
+.footer-note{font-size:12px;color:var(--muted);margin-top:10px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr} h1{font-size:22px}}
 </style>
 </head>
 <body>
-<main>
-<h1>Goal-Date Listening Demo</h1>
-<p class="muted">弱点は局所、訓練は文脈の中で。</p>
+<div class="wrap">
+<div class="kicker">試作品 09・音声入りWebデモ</div>
+<h1>弱点を、目標日までに潰す</h1>
+<p class="sub">音の壁・意味の壁・文脈依存を記録し、×△○の結果から目標日までの復習予定を組み直します。</p>
 
-<div class="card">
-<h2>1. 目標日</h2>
-<div class="row">
-<label>今日 <input id="today" type="date"></label>
-<label>目標日 <input id="goal" type="date"></label>
+<section class="panel">
+<div class="step">GOAL</div>
+<div class="grid2">
+<label class="field">目標日<input id="goalDate" type="date"></label>
+<label class="field">今日<input id="todayDate" type="date"></label>
 </div>
-<p id="countdown" class="schedule"></p>
+<div class="count" id="countdown">日付を設定してください</div>
+</section>
+
+<section class="panel">
+<div class="step">STEP 1　初回学習・弱点登録</div>
+<audio controls preload="metadata" src="sentence.mp3"></audio>
+<p class="center">英文を見ずに聞いてください。</p>
+<p class="note">※試作機のため、音声は合成音声です。</p>
+
+<details open>
+<summary>英文を確認して弱点登録</summary>
+<div class="text">I should be, as long as I can get this report done in time.</div>
+<p class="note">聞き取れなかった語をタップ（複数可）</p>
+<div class="words"><label class="word"><input id="w0" type="checkbox" data-word="0"><span>I</span></label><label class="word"><input id="w1" type="checkbox" data-word="1"><span>should</span></label><label class="word"><input id="w2" type="checkbox" data-word="2"><span>be,</span></label><label class="word"><input id="w3" type="checkbox" data-word="3"><span>as</span></label><label class="word"><input id="w4" type="checkbox" data-word="4"><span>long</span></label><label class="word"><input id="w5" type="checkbox" data-word="5"><span>as</span></label><label class="word"><input id="w6" type="checkbox" data-word="6"><span>I</span></label><label class="word"><input id="w7" type="checkbox" data-word="7"><span>can</span></label><label class="word"><input id="w8" type="checkbox" data-word="8"><span>get</span></label><label class="word"><input id="w9" type="checkbox" data-word="9"><span>this</span></label><label class="word"><input id="w10" type="checkbox" data-word="10"><span>report</span></label><label class="word"><input id="w11" type="checkbox" data-word="11"><span>done</span></label><label class="word"><input id="w12" type="checkbox" data-word="12"><span>in</span></label><label class="word"><input id="w13" type="checkbox" data-word="13"><span>time.</span></label></div>
+
+<p><strong>なぜ難しかったですか？</strong></p>
+<div class="causes">
+<label class="cause"><input id="cSound" type="checkbox" value="sound">🔊 音が取れなかった</label>
+<label class="cause"><input id="cMeaning" type="checkbox" value="meaning">🧠 音は取れたが意味処理が追いつかなかった</label>
+<label class="cause"><input id="cContext" type="checkbox" value="context">🔗 前後の文脈が必要だった</label>
 </div>
 
-<div class="card">
-<h2>2. まず自然な文を聞く</h2>
-<p class="muted">※この公開版は操作確認用です。著作権のある教材音声は入れていません。</p>
-<button id="reveal" class="primary">英文を表示</button>
-<div id="transcriptBox" class="hidden">
-<p>聞き取れなかった語をタップしてください。</p>
-<div class="words" id="words"></div>
-<div class="reason">
-<p><strong>弱点理由</strong></p>
-<label><input type="checkbox" value="sound"> 🔊 音が取れなかった</label>
-<label><input type="checkbox" value="meaning"> 🧠 意味処理が追いつかなかった</label>
-<label><input type="checkbox" value="context"> 🔗 前後の文脈が必要だった</label>
-</div>
-<button id="register" class="primary">この弱点を登録</button>
-</div>
-</div>
+<details class="context">
+<summary>前後の文脈を聞いて確認する</summary>
+<audio controls preload="metadata" src="context.mp3"></audio>
+<p class="note">前のやり取りから対象文まで再生します。</p>
+</details>
 
-<div class="card">
-<h2>3. 復習を模擬</h2>
-<p>数日後、同じ自然な文を聞いたあとで答えを表示します。</p>
-<button id="showAnswer">答えを見る</button>
-<p id="answer" class="answer hidden"></p>
-<p id="reasonsOut"></p>
-<div class="grade">
+<button class="primary" id="registerBtn" type="button">この弱点を登録</button>
+<div class="status" id="registerStatus">まだ登録されていません。</div>
+</details>
+</section>
+
+<section class="panel">
+<div class="step">STEP 2　復習カード</div>
+<p class="note">デモでは、初回登録後すぐに「数日後の復習」を体験できます。</p>
+<audio controls preload="metadata" src="sentence.mp3"></audio>
+<p class="center">まず一文だけで再挑戦します。</p>
+
+<details class="context">
+<summary>一文だけでは難しい → 文脈から聞く</summary>
+<audio controls preload="metadata" src="context.mp3"></audio>
+</details>
+
+<details open>
+<summary>答えと前回の弱点を見る</summary>
+<div class="review"><span class="review-word" data-review="0">I</span> <span class="review-word" data-review="1">should</span> <span class="review-word" data-review="2">be,</span> <span class="review-word" data-review="3">as</span> <span class="review-word" data-review="4">long</span> <span class="review-word" data-review="5">as</span> <span class="review-word" data-review="6">I</span> <span class="review-word" data-review="7">can</span> <span class="review-word" data-review="8">get</span> <span class="review-word" data-review="9">this</span> <span class="review-word" data-review="10">report</span> <span class="review-word" data-review="11">done</span> <span class="review-word" data-review="12">in</span> <span class="review-word" data-review="13">time.</span></div>
+<div class="badges" id="causeBadges"><div class="note">弱点理由は未登録です。</div></div>
+
 <p><strong>今回どうでしたか？</strong></p>
-<button data-g="x">× 聞けない</button>
-<button data-g="d">△ 不安</button>
-<button data-g="o">○ 聞けた</button>
-</div>
-<div id="scheduleBox" class="hidden">
-<p id="next" class="schedule"></p>
-<div id="chips" class="chips"></div>
-<p class="muted">※日程ロジックは概念実証用です。将来は履歴・残日数・学習可能日・負荷上限などを反映します。</p>
-</div>
+<div class="grade">
+<button type="button" data-grade="x">× 聞けない</button>
+<button type="button" data-grade="triangle">△ 不安</button>
+<button type="button" data-grade="circle">○ 聞けた</button>
 </div>
 
-<div class="card"><button id="reset">デモをリセット</button></div>
-</main>
+<div class="schedule" id="scheduleBox">
+<h3>逆算スケジューリング</h3>
+<div>×△○を押すと、目標日までの復習予定が表示されます。</div>
+</div>
+
+<div class="warn">※9号機の復習間隔は「目標日までに仕上げる」という考え方を見せるための試作ルールです。医学・認知科学的に最適化済みという意味ではありません。</div>
+</details>
+</section>
+
+<section class="panel">
+<div class="step">DEMO RESET</div>
+<button class="secondary" id="resetBtn" type="button">友人に渡す前に初期状態へ戻す</button>
+<p class="footer-note">この端末のブラウザ内にだけ保存します。サーバーへ送信しません。</p>
+</section>
+</div>
 
 <script>
-const toks=["But","I","didn't","have","time","to","get","my","assignment","done."];
-const today=document.getElementById('today');
-const goal=document.getElementById('goal');
-const countdown=document.getElementById('countdown');
+const tokenCount=14;
+const todayEl=document.getElementById('todayDate');
+const goalEl=document.getElementById('goalDate');
+const countdownEl=document.getElementById('countdown');
+const registerStatus=document.getElementById('registerStatus');
+const causeBadges=document.getElementById('causeBadges');
+const reviewWords=[...document.querySelectorAll('.review-word')];
+const gradeBtns=[...document.querySelectorAll('.grade button')];
 
-function ymdLocal(d){
-  const y=d.getFullYear();
-  const m=String(d.getMonth()+1).padStart(2,'0');
-  const day=String(d.getDate()).padStart(2,'0');
-  return `${y}-${m}-${day}`;
-}
-function parseDate(v){
-  const [y,m,d]=v.split('-').map(Number);
-  return new Date(y,m-1,d);
-}
-function fmt(d){return d.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric'});}
-function calcCountdown(){
-  if(!today.value||!goal.value)return;
-  const n=Math.round((parseDate(goal.value)-parseDate(today.value))/86400000);
-  countdown.textContent=n>=0?`目標日まであと ${n} 日`:`目標日を過ぎています`;
-}
+function pad(n){return String(n).padStart(2,'0')}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function parseDate(s){const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d)}
+function addDays(d,n){const x=new Date(d); x.setDate(x.getDate()+n); return x}
+function diffDays(a,b){return Math.round((b-a)/86400000)}
+function fmt(d){return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`}
+
 function initDates(){
-  const t=new Date(); t.setHours(0,0,0,0);
-  const g=new Date(t); g.setDate(g.getDate()+22);
-  today.value=ymdLocal(t); goal.value=ymdLocal(g); calcCountdown();
+ const now=new Date();
+ if(!todayEl.value) todayEl.value=iso(now);
+ if(!goalEl.value) goalEl.value=iso(addDays(now,30));
+ updateCountdown();
 }
-today.addEventListener('change',calcCountdown);
-goal.addEventListener('change',calcCountdown);
 
-const words=document.getElementById('words');
-toks.forEach((t,i)=>{
-  const b=document.createElement('button');
-  b.className='word'; b.textContent=t; b.dataset.i=i;
-  b.addEventListener('click',()=>b.classList.toggle('sel'));
-  words.appendChild(b);
-});
-document.getElementById('reveal').addEventListener('click',()=>{
-  document.getElementById('transcriptBox').classList.remove('hidden');
+function updateCountdown(){
+ if(!todayEl.value||!goalEl.value) return;
+ const t=parseDate(todayEl.value), g=parseDate(goalEl.value);
+ const n=diffDays(t,g);
+ countdownEl.textContent = n>=0 ? `目標日まであと ${n} 日` : '目標日は今日より前です';
+}
+
+function selectedWords(){
+ return [...document.querySelectorAll('.word input:checked')].map(x=>Number(x.dataset.word));
+}
+function selectedCauses(){
+ const list=[];
+ if(document.getElementById('cSound').checked) list.push('sound');
+ if(document.getElementById('cMeaning').checked) list.push('meaning');
+ if(document.getElementById('cContext').checked) list.push('context');
+ return list;
+}
+function causeLabel(c){
+ return c==='sound'?'🔊 前回：音が取れなかった':
+        c==='meaning'?'🧠 前回：意味処理が追いつかなかった':
+        '🔗 前回：前後の文脈が必要だった';
+}
+function renderWeakness(data){
+ reviewWords.forEach((el,i)=>el.classList.toggle('marked',data.words.includes(i)));
+ causeBadges.innerHTML='';
+ if(data.causes.length===0){
+   causeBadges.innerHTML='<div class="note">弱点理由は未登録です。</div>';
+ } else {
+   data.causes.forEach(c=>{
+     const div=document.createElement('div');
+     div.className='badge';
+     div.textContent=causeLabel(c);
+     causeBadges.appendChild(div);
+   });
+ }
+}
+function saveWeakness(){
+ const data={words:selectedWords(),causes:selectedCauses()};
+ localStorage.setItem('gdl_v9_weakness',JSON.stringify(data));
+ renderWeakness(data);
+ registerStatus.textContent=`弱点 ${data.words.length} 語、理由 ${data.causes.length} 件を登録しました。`;
+}
+function loadWeakness(){
+ try{
+   const raw=localStorage.getItem('gdl_v9_weakness');
+   if(!raw) return;
+   const data=JSON.parse(raw);
+   [...document.querySelectorAll('.word input')].forEach(x=>x.checked=data.words.includes(Number(x.dataset.word)));
+   document.getElementById('cSound').checked=data.causes.includes('sound');
+   document.getElementById('cMeaning').checked=data.causes.includes('meaning');
+   document.getElementById('cContext').checked=data.causes.includes('context');
+   renderWeakness(data);
+   registerStatus.textContent=`保存済み：弱点 ${data.words.length} 語、理由 ${data.causes.length} 件`;
+ }catch(e){}
+}
+
+function reviewPositions(grade){
+ // 目標日前日までに何回復習するかを評価で変える（試作ルール）
+ if(grade==='x') return [0.08,0.20,0.40,0.68,1.00];
+ if(grade==='triangle') return [0.15,0.38,0.70,1.00];
+ return [0.28,0.62,1.00];
+}
+
+function buildSchedule(grade){
+ if(!todayEl.value||!goalEl.value) return;
+ const t=parseDate(todayEl.value), g=parseDate(goalEl.value);
+ const remaining=diffDays(t,g);
+ const box=document.getElementById('scheduleBox');
+ if(remaining<=0){
+   box.innerHTML='<h3>逆算スケジューリング</h3><div class="next-big">今日は目標日です</div><div>今日を最終確認日にします。</div>';
+   return;
+ }
+ const finalDay=addDays(g,-1);
+ const span=Math.max(1,diffDays(t,finalDay));
+ const pos=reviewPositions(grade);
+ let dates=[];
+ for(const p of pos){
+   let offset=Math.max(1,Math.round(span*p));
+   let d=addDays(t,offset);
+   if(d>finalDay) d=new Date(finalDay);
+   const key=iso(d);
+   if(!dates.some(x=>iso(x)===key)) dates.push(d);
+ }
+ if(!dates.some(x=>iso(x)===iso(finalDay))) dates.push(finalDay);
+ dates.sort((a,b)=>a-b);
+ const gradeLabel=grade==='x'?'× 聞けない':grade==='triangle'?'△ 不安':'○ 聞けた';
+ const next=dates[0];
+ box.innerHTML=`<h3>逆算スケジューリング</h3>
+   <div>${gradeLabel}として再計算</div>
+   <div class="next-big">次回：${fmt(next)}</div>
+   <div>目標日：${fmt(g)}　／　最終確認：${fmt(finalDay)}</div>
+   <div class="schedule-row">${dates.map((d,i)=>`<span class="date-chip">${i===0?'次回 ':''}${fmt(d)}</span>`).join('')}</div>`;
+ localStorage.setItem('gdl_v9_grade',grade);
+ localStorage.setItem('gdl_v9_goal',goalEl.value);
+ localStorage.setItem('gdl_v9_today',todayEl.value);
+}
+
+document.getElementById('registerBtn').addEventListener('click',saveWeakness);
+todayEl.addEventListener('change',()=>{updateCountdown();});
+goalEl.addEventListener('change',()=>{updateCountdown();});
+gradeBtns.forEach(btn=>btn.addEventListener('click',()=>{
+ gradeBtns.forEach(b=>b.classList.remove('active'));
+ btn.classList.add('active');
+ buildSchedule(btn.dataset.grade);
+}));
+
+document.getElementById('resetBtn').addEventListener('click',()=>{
+ localStorage.removeItem('gdl_v9_weakness');
+ localStorage.removeItem('gdl_v9_grade');
+ localStorage.removeItem('gdl_v9_goal');
+ localStorage.removeItem('gdl_v9_today');
+ [...document.querySelectorAll('.word input')].forEach(x=>x.checked=false);
+ document.getElementById('cSound').checked=false;
+ document.getElementById('cMeaning').checked=false;
+ document.getElementById('cContext').checked=false;
+ reviewWords.forEach(x=>x.classList.remove('marked'));
+ causeBadges.innerHTML='<div class="note">弱点理由は未登録です。</div>';
+ registerStatus.textContent='まだ登録されていません。';
+ gradeBtns.forEach(b=>b.classList.remove('active'));
+ document.getElementById('scheduleBox').innerHTML='<h3>逆算スケジューリング</h3><div>×△○を押すと、目標日までの復習予定が表示されます。</div>';
+ const now=new Date(); todayEl.value=iso(now); goalEl.value=iso(addDays(now,30)); updateCountdown();
 });
 
-let weak=[],reasons=[];
-document.getElementById('register').addEventListener('click',()=>{
-  weak=[...document.querySelectorAll('.word.sel')].map(x=>Number(x.dataset.i));
-  reasons=[...document.querySelectorAll('.reason input:checked')].map(x=>x.value);
-  localStorage.setItem('gdWeak',JSON.stringify({weak,reasons}));
-  alert('弱点を登録しました。');
-});
-function load(){
-  try{
-    const x=JSON.parse(localStorage.getItem('gdWeak')||'{}');
-    weak=x.weak||[]; reasons=x.reasons||[];
-  }catch(e){}
-}
-document.getElementById('showAnswer').addEventListener('click',()=>{
-  load();
-  document.getElementById('answer').innerHTML=
-    toks.map((t,i)=>`<span class="${weak.includes(i)?'weak':''}">${t}</span>`).join(' ');
-  document.getElementById('answer').classList.remove('hidden');
-  const labels={
-    sound:'🔊 前回：音が取れなかった',
-    meaning:'🧠 前回：意味処理が追いつかなかった',
-    context:'🔗 前回：前後の文脈が必要だった'
-  };
-  document.getElementById('reasonsOut').innerHTML=reasons.map(r=>`<div>${labels[r]}</div>`).join('');
-});
-document.querySelectorAll('.grade button').forEach(b=>{
-  b.addEventListener('click',()=>schedule(b.dataset.g));
-});
-function schedule(g){
-  if(!today.value||!goal.value)return;
-  const t=parseDate(today.value), G=parseDate(goal.value);
-  const end=new Date(G); end.setDate(end.getDate()-1);
-  const total=Math.max(1,Math.round((end-t)/86400000));
-  const ratios=g==='x'?[.08,.20,.40,.68,1]:g==='d'?[.15,.38,.70,1]:[.28,.62,1];
-  const ds=ratios.map(r=>{
-    const d=new Date(t);
-    d.setDate(d.getDate()+Math.max(1,Math.round(total*r)));
-    return d>end?new Date(end):d;
-  });
-  const name=g==='x'?'× 聞けない':g==='d'?'△ 不安':'○ 聞けた';
-  document.getElementById('next').textContent=`${name} → 次回復習：${fmt(ds[0])}`;
-  document.getElementById('chips').innerHTML=
-    ds.map((d,i)=>`<span class="chip">${i===ds.length-1?'最終確認 ':''}${fmt(d)}</span>`).join('');
-  document.getElementById('scheduleBox').classList.remove('hidden');
-}
-document.getElementById('reset').addEventListener('click',()=>{
-  localStorage.removeItem('gdWeak');
-  location.reload();
-});
 initDates();
+loadWeakness();
+try{
+ const savedGoal=localStorage.getItem('gdl_v9_goal');
+ const savedToday=localStorage.getItem('gdl_v9_today');
+ const savedGrade=localStorage.getItem('gdl_v9_grade');
+ if(savedGoal) goalEl.value=savedGoal;
+ if(savedToday) todayEl.value=savedToday;
+ updateCountdown();
+ if(savedGrade){
+   const b=gradeBtns.find(x=>x.dataset.grade===savedGrade);
+   if(b){b.classList.add('active'); buildSchedule(savedGrade);}
+ }
+}catch(e){}
 </script>
+
 </body>
 </html>
