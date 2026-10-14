@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Goal-Date Listening Demo 9</title>
+<title>Goal-Date Listening Demo 10</title>
 <style>
 :root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#dce1ea;--blue:#315efb;--soft:#edf2ff;--yellow:#fff0a8;--green:#eaf8ef}
 *{box-sizing:border-box}
@@ -50,11 +50,12 @@ summary{font-weight:800;min-height:44px;display:flex;align-items:center;cursor:p
 .warn{background:#fff7e8;border:1px solid #f0d7a6;border-radius:12px;padding:11px;font-size:13px;margin-top:10px}
 .footer-note{font-size:12px;color:var(--muted);margin-top:10px}
 @media(max-width:520px){.grid2{grid-template-columns:1fr} h1{font-size:22px}}
+ .hidden{display:none!important}.due{background:#eef7ff;border:1px solid #b9d4ff;border-radius:14px;padding:14px;margin-top:12px}.due h3{margin:0 0 7px}.due-state{font-weight:800;font-size:18px}.test-note{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
 <div class="wrap">
-<div class="kicker">試作品 09・音声入りWebデモ</div>
+<div class="kicker">試作品 10・復習日自動出題テスト</div>
 <h1>弱点を、目標日までに潰す</h1>
 <p class="sub">音の壁・意味の壁・文脈依存を記録し、×△○の結果から目標日までの復習予定を組み直します。</p>
 
@@ -65,6 +66,9 @@ summary{font-weight:800;min-height:44px;display:flex;align-items:center;cursor:p
 <label class="field">今日<input id="todayDate" type="date"></label>
 </div>
 <div class="count" id="countdown">日付を設定してください</div>
+<div class="test-note">「今日」はテスト用の日付です。未来の日付に変更すると、復習日到来を再現できます。通常利用では実際の今日の日付に戻してください。</div>
+<button class="secondary" id="realTodayBtn" type="button">実際の今日に戻す</button>
+<div class="due" id="dueBox" aria-live="polite"><h3>今日の復習</h3><div id="dueState" class="due-state">確認中…</div><div class="note" id="dueDetail"></div><button class="primary hidden" id="openReviewBtn" type="button">復習カードを開く</button></div>
 </section>
 
 <section class="panel">
@@ -97,9 +101,9 @@ summary{font-weight:800;min-height:44px;display:flex;align-items:center;cursor:p
 </details>
 </section>
 
-<section class="panel">
+<section class="panel" id="reviewPanel">
 <div class="step">STEP 2　復習カード</div>
-<p class="note">デモでは、初回登録後すぐに「数日後の復習」を体験できます。</p>
+<p class="note">初回登録直後は試しに評価できます。その後は、復習日が来るまでカードを非表示にします。</p>
 <audio controls preload="metadata" src="sentence.mp3"></audio>
 <p class="center">まず一文だけで再挑戦します。</p>
 
@@ -108,7 +112,7 @@ summary{font-weight:800;min-height:44px;display:flex;align-items:center;cursor:p
 <audio controls preload="metadata" src="context.mp3"></audio>
 </details>
 
-<details open>
+<details id="reviewAnswer">
 <summary>答えと前回の弱点を見る</summary>
 <div class="review"><span class="review-word" data-review="0">I</span> <span class="review-word" data-review="1">should</span> <span class="review-word" data-review="2">be,</span> <span class="review-word" data-review="3">as</span> <span class="review-word" data-review="4">long</span> <span class="review-word" data-review="5">as</span> <span class="review-word" data-review="6">I</span> <span class="review-word" data-review="7">can</span> <span class="review-word" data-review="8">get</span> <span class="review-word" data-review="9">this</span> <span class="review-word" data-review="10">report</span> <span class="review-word" data-review="11">done</span> <span class="review-word" data-review="12">in</span> <span class="review-word" data-review="13">time.</span></div>
 <div class="badges" id="causeBadges"><div class="note">弱点理由は未登録です。</div></div>
@@ -125,14 +129,14 @@ summary{font-weight:800;min-height:44px;display:flex;align-items:center;cursor:p
 <div>×△○を押すと、目標日までの復習予定が表示されます。</div>
 </div>
 
-<div class="warn">※9号機の復習間隔は「目標日までに仕上げる」という考え方を見せるための試作ルールです。医学・認知科学的に最適化済みという意味ではありません。</div>
+<div class="warn">※10号機の復習間隔は「目標日までに仕上げる」という考え方を見せるための試作ルールです。医学・認知科学的に最適化済みという意味ではありません。</div>
 </details>
 </section>
 
 <section class="panel">
 <div class="step">DEMO RESET</div>
 <button class="secondary" id="resetBtn" type="button">友人に渡す前に初期状態へ戻す</button>
-<p class="footer-note">この端末のブラウザ内にだけ保存します。サーバーへ送信しません。</p>
+<p class="footer-note">この端末のブラウザ内にだけ保存します。サーバーへ送信しません。ブラウザのデータを削除すると記録は消えます。</p>
 </section>
 </div>
 
@@ -145,6 +149,28 @@ const registerStatus=document.getElementById('registerStatus');
 const causeBadges=document.getElementById('causeBadges');
 const reviewWords=[...document.querySelectorAll('.review-word')];
 const gradeBtns=[...document.querySelectorAll('.grade button')];
+const dueState=document.getElementById('dueState');
+const dueDetail=document.getElementById('dueDetail');
+const dueBox=document.getElementById('dueBox');
+const reviewPanel=document.getElementById('reviewPanel');
+const openReviewBtn=document.getElementById('openReviewBtn');
+const stateKey='gdl_v10_fixed_state';
+let state={registered:false,nextDue:null,grade:null,history:[],lastSchedule:[],goalDate:null};
+function loadState(){try{const v=JSON.parse(localStorage.getItem(stateKey)||'null');if(v&&typeof v==='object')state={...state,...v};}catch(e){}}
+function saveState(){localStorage.setItem(stateKey,JSON.stringify(state));}
+function validDate(s){return /^\d{4}-\d{2}-\d{2}$/.test(s||'');}
+function renderDue(){
+  const today=todayEl.value;
+  const due=state.registered&&validDate(state.nextDue)&&today>=state.nextDue;
+  openReviewBtn.classList.add('hidden');
+  reviewPanel.classList.add('hidden');
+  if(!state.registered){dueState.textContent='今日の復習：0件';dueDetail.textContent='まずSTEP 1で弱点を登録してください。';reviewPanel.classList.remove('hidden');return;}
+  if(!state.nextDue){dueState.textContent='初回評価待ち：1件';dueDetail.textContent='STEP 2で一度評価すると次回復習日が決まります。';reviewPanel.classList.remove('hidden');return;}
+  if(due){dueState.textContent='今日の復習：1件';dueDetail.textContent='予定日：'+state.nextDue.replaceAll('-','/')+(today>state.nextDue?'（期限超過）':'（本日）');openReviewBtn.classList.remove('hidden');reviewPanel.classList.remove('hidden');document.getElementById('reviewAnswer').open=false;}
+  else{dueState.textContent='今日の復習：0件';dueDetail.textContent='次回復習日：'+state.nextDue.replaceAll('-','/');}
+}
+openReviewBtn.addEventListener('click',()=>{reviewPanel.classList.remove('hidden');document.getElementById('reviewAnswer').open=false;reviewPanel.scrollIntoView({behavior:'smooth',block:'start'});});
+document.getElementById('realTodayBtn').addEventListener('click',()=>{todayEl.value=iso(new Date());updateCountdown();renderDue();});
 
 function pad(n){return String(n).padStart(2,'0')}
 function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
@@ -229,8 +255,8 @@ function buildSchedule(grade){
  const remaining=diffDays(t,g);
  const box=document.getElementById('scheduleBox');
  if(remaining<=0){
-   box.innerHTML='<h3>逆算スケジューリング</h3><div class="next-big">今日は目標日です</div><div>今日を最終確認日にします。</div>';
-   return;
+   box.innerHTML='<h3>逆算スケジューリング</h3><div class="next-big">目標日当日または経過後です</div><div>今日を確認日にします。</div>';
+   return [todayEl.value];
  }
  const finalDay=addDays(g,-1);
  const span=Math.max(1,diffDays(t,finalDay));
@@ -255,11 +281,24 @@ function buildSchedule(grade){
  localStorage.setItem('gdl_v9_grade',grade);
  localStorage.setItem('gdl_v9_goal',goalEl.value);
  localStorage.setItem('gdl_v9_today',todayEl.value);
+ return dates.map(iso);
 }
 
 document.getElementById('registerBtn').addEventListener('click',saveWeakness);
-todayEl.addEventListener('change',()=>{updateCountdown();});
-goalEl.addEventListener('change',()=>{updateCountdown();});
+todayEl.addEventListener('change',()=>{updateCountdown();renderDue();});
+goalEl.addEventListener('change',()=>{
+  updateCountdown();
+  if(state.registered && state.grade){
+    // 目標日変更時は、最後の評価日を基点に復習予定を再計算する。
+    const testDay=todayEl.value;
+    todayEl.value=state.history.length ? state.history[state.history.length-1].date : testDay;
+    const dates=buildSchedule(state.grade);
+    todayEl.value=testDay; updateCountdown();
+    state.lastSchedule=dates||[]; state.nextDue=state.lastSchedule[0]||null;
+    state.goalDate=goalEl.value; saveState();
+  }
+  renderDue();
+});
 gradeBtns.forEach(btn=>btn.addEventListener('click',()=>{
  gradeBtns.forEach(b=>b.classList.remove('active'));
  btn.classList.add('active');
@@ -280,23 +319,16 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
  registerStatus.textContent='まだ登録されていません。';
  gradeBtns.forEach(b=>b.classList.remove('active'));
  document.getElementById('scheduleBox').innerHTML='<h3>逆算スケジューリング</h3><div>×△○を押すと、目標日までの復習予定が表示されます。</div>';
- const now=new Date(); todayEl.value=iso(now); goalEl.value=iso(addDays(now,30)); updateCountdown();
+ const now=new Date(); todayEl.value=iso(now); goalEl.value=iso(addDays(now,30)); updateCountdown(); renderDue();
 });
 
 initDates();
+loadState();
 loadWeakness();
-try{
- const savedGoal=localStorage.getItem('gdl_v9_goal');
- const savedToday=localStorage.getItem('gdl_v9_today');
- const savedGrade=localStorage.getItem('gdl_v9_grade');
- if(savedGoal) goalEl.value=savedGoal;
- if(savedToday) todayEl.value=savedToday;
- updateCountdown();
- if(savedGrade){
-   const b=gradeBtns.find(x=>x.dataset.grade===savedGrade);
-   if(b){b.classList.add('active'); buildSchedule(savedGrade);}
- }
-}catch(e){}
+// 10号機の保存状態を優先し、旧9号機の表示用データを再利用しない。
+if(state.goalDate && validDate(state.goalDate)) goalEl.value=state.goalDate;
+updateCountdown();
+renderDue();
 </script>
 
 </body>
