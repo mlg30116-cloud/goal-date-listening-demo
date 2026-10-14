@@ -68,6 +68,8 @@ summary{font-weight:800;min-height:44px;display:flex;align-items:center;cursor:p
 <div class="count" id="countdown">日付を設定してください</div>
 <div class="test-note">「今日」はテスト用の日付です。変更した日付はこの端末に保存されます。通常利用では「実際の今日に戻す」を押してください。</div>
 <button class="secondary" id="realTodayBtn" type="button">実際の今日に戻す</button>
+<button class="secondary" id="earlyReviewBtn" type="button">実時間検証：次回復習日を10月15日にする</button>
+<div class="test-note" id="earlyReviewStatus">検証用の一時変更です。弱点と評価履歴は保持します。</div>
 <div class="status" id="debugState" style="font-size:12px;overflow-wrap:anywhere">診断：読み込み中</div><div class="due" id="dueBox" aria-live="polite"><h3>今日の復習</h3><div id="dueState" class="due-state">確認中…</div><div class="note" id="dueDetail"></div><button class="primary hidden" id="openReviewBtn" type="button">復習カードを開く</button></div>
 </section>
 
@@ -173,6 +175,22 @@ function renderDue({keepReviewVisible=false}={}){
 }
 openReviewBtn.addEventListener('click',()=>{reviewPanel.classList.remove('hidden');document.getElementById('reviewAnswer').open=false;reviewPanel.scrollIntoView({behavior:'smooth',block:'start'});});
 document.getElementById('realTodayBtn').addEventListener('click',()=>{todayEl.value=iso(new Date());state.testToday=null;saveState();updateCountdown();renderDue();});
+document.getElementById('earlyReviewBtn').addEventListener('click',()=>{
+ if(!state.registered || !state.nextDue){
+  document.getElementById('earlyReviewStatus').textContent='先に弱点登録と初回評価を完了してください。';return;
+ }
+ const requested='2026-10-15';
+ if(iso(new Date())>requested){
+  document.getElementById('earlyReviewStatus').textContent='10月15日を過ぎています。過去の日付への変更はできません。';return;
+ }
+ state.nextDue=requested;
+ state.lastSchedule=[requested,...(Array.isArray(state.lastSchedule)?state.lastSchedule:[]).filter(d=>validDate(d)&&d>requested)];
+ state.testToday=null;
+ todayEl.value=iso(new Date());
+ saveState();updateCountdown();renderDue();
+ document.getElementById('earlyReviewStatus').textContent='次回復習日を2026年10月15日に変更しました。評価履歴は保持しています。';
+});
+
 
 function pad(n){return String(n).padStart(2,'0')}
 function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
