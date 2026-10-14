@@ -55,7 +55,7 @@ summary{font-weight:800;min-height:44px;display:flex;align-items:center;cursor:p
 </head>
 <body>
 <div class="wrap">
-<div class="kicker">試作品 10・復習日自動出題テスト</div>
+<div class="kicker">試作品 10・スマートフォン検証修正版</div>
 <h1>弱点を、目標日までに潰す</h1>
 <p class="sub">音の壁・意味の壁・文脈依存を記録し、×△○の結果から目標日までの復習予定を組み直します。</p>
 
@@ -66,9 +66,9 @@ summary{font-weight:800;min-height:44px;display:flex;align-items:center;cursor:p
 <label class="field">今日<input id="todayDate" type="date"></label>
 </div>
 <div class="count" id="countdown">日付を設定してください</div>
-<div class="test-note">「今日」はテスト用の日付です。未来の日付に変更すると、復習日到来を再現できます。通常利用では実際の今日の日付に戻してください。</div>
+<div class="test-note">「今日」はテスト用の日付です。変更した日付はこの端末に保存されます。通常利用では「実際の今日に戻す」を押してください。</div>
 <button class="secondary" id="realTodayBtn" type="button">実際の今日に戻す</button>
-<div class="due" id="dueBox" aria-live="polite"><h3>今日の復習</h3><div id="dueState" class="due-state">確認中…</div><div class="note" id="dueDetail"></div><button class="primary hidden" id="openReviewBtn" type="button">復習カードを開く</button></div>
+<div class="status" id="debugState" style="font-size:12px;overflow-wrap:anywhere">診断：読み込み中</div><div class="due" id="dueBox" aria-live="polite"><h3>今日の復習</h3><div id="dueState" class="due-state">確認中…</div><div class="note" id="dueDetail"></div><button class="primary hidden" id="openReviewBtn" type="button">復習カードを開く</button></div>
 </section>
 
 <section class="panel">
@@ -154,14 +154,15 @@ const dueDetail=document.getElementById('dueDetail');
 const dueBox=document.getElementById('dueBox');
 const reviewPanel=document.getElementById('reviewPanel');
 const openReviewBtn=document.getElementById('openReviewBtn');
-const stateKey='gdl_v10_fixed_state';
-let state={registered:false,nextDue:null,grade:null,history:[],lastSchedule:[],goalDate:null};
+const stateKey='gdl_v10_verified_state';
+let state={registered:false,nextDue:null,grade:null,history:[],lastSchedule:[],goalDate:null,testToday:null,words:[],causes:[]};
 function loadState(){try{const v=JSON.parse(localStorage.getItem(stateKey)||'null');if(v&&typeof v==='object')state={...state,...v};}catch(e){}}
-function saveState(){localStorage.setItem(stateKey,JSON.stringify(state));}
+function saveState(){try{localStorage.setItem(stateKey,JSON.stringify(state));}catch(e){registerStatus.textContent='保存できませんでした：ブラウザの保存設定をご確認ください。';}renderDebug();}
+function renderDebug(){document.getElementById('debugState').textContent='診断｜登録='+state.registered+'｜次回='+ (state.nextDue||'未設定')+'｜評価='+ (state.grade||'未設定')+'｜履歴='+state.history.length+'件｜テスト日='+todayEl.value+'｜保存キー='+stateKey;}
 function validDate(s){return /^\d{4}-\d{2}-\d{2}$/.test(s||'');}
 function renderDue(){
   const today=todayEl.value;
-  const due=state.registered&&validDate(state.nextDue)&&today>=state.nextDue;
+  const due=state.registered&&validDate(state.nextDue)&&validDate(today)&&today>=state.nextDue;
   openReviewBtn.classList.add('hidden');
   reviewPanel.classList.add('hidden');
   if(!state.registered){dueState.textContent='今日の復習：0件';dueDetail.textContent='まずSTEP 1で弱点を登録してください。';reviewPanel.classList.remove('hidden');return;}
@@ -170,7 +171,7 @@ function renderDue(){
   else{dueState.textContent='今日の復習：0件';dueDetail.textContent='次回復習日：'+state.nextDue.replaceAll('-','/');}
 }
 openReviewBtn.addEventListener('click',()=>{reviewPanel.classList.remove('hidden');document.getElementById('reviewAnswer').open=false;reviewPanel.scrollIntoView({behavior:'smooth',block:'start'});});
-document.getElementById('realTodayBtn').addEventListener('click',()=>{todayEl.value=iso(new Date());updateCountdown();renderDue();});
+document.getElementById('realTodayBtn').addEventListener('click',()=>{todayEl.value=iso(new Date());state.testToday=null;saveState();updateCountdown();renderDue();});
 
 function pad(n){return String(n).padStart(2,'0')}
 function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
@@ -224,22 +225,31 @@ function renderWeakness(data){
 }
 function saveWeakness(){
  const data={words:selectedWords(),causes:selectedCauses()};
- localStorage.setItem('gdl_v9_weakness',JSON.stringify(data));
+ if(data.words.length===0 && data.causes.length===0){
+   registerStatus.textContent='弱点の語または理由を1つ以上選んでください。';return;
+ }
+ state.words=data.words;
+ state.causes=data.causes;
+ state.registered=true;
+ // 登録をやり直したときは初回評価から再開する。
+ state.grade=null;state.nextDue=null;state.history=[];state.lastSchedule=[];
+ state.goalDate=goalEl.value;
+ gradeBtns.forEach(b=>b.classList.remove('active'));
+ document.getElementById('scheduleBox').innerHTML='<h3>逆算スケジューリング</h3><div>×△○を押すと、目標日までの復習予定が表示されます。</div>';
  renderWeakness(data);
+ saveState();
+ renderDue();
  registerStatus.textContent=`弱点 ${data.words.length} 語、理由 ${data.causes.length} 件を登録しました。`;
 }
 function loadWeakness(){
- try{
-   const raw=localStorage.getItem('gdl_v9_weakness');
-   if(!raw) return;
-   const data=JSON.parse(raw);
-   [...document.querySelectorAll('.word input')].forEach(x=>x.checked=data.words.includes(Number(x.dataset.word)));
-   document.getElementById('cSound').checked=data.causes.includes('sound');
-   document.getElementById('cMeaning').checked=data.causes.includes('meaning');
-   document.getElementById('cContext').checked=data.causes.includes('context');
-   renderWeakness(data);
-   registerStatus.textContent=`保存済み：弱点 ${data.words.length} 語、理由 ${data.causes.length} 件`;
- }catch(e){}
+ if(!state.registered)return;
+ const data={words:Array.isArray(state.words)?state.words:[],causes:Array.isArray(state.causes)?state.causes:[]};
+ [...document.querySelectorAll('.word input')].forEach(x=>x.checked=data.words.includes(Number(x.dataset.word)));
+ document.getElementById('cSound').checked=data.causes.includes('sound');
+ document.getElementById('cMeaning').checked=data.causes.includes('meaning');
+ document.getElementById('cContext').checked=data.causes.includes('context');
+ renderWeakness(data);
+ registerStatus.textContent=`保存済み：弱点 ${data.words.length} 語、理由 ${data.causes.length} 件`;
 }
 
 function reviewPositions(grade){
@@ -278,14 +288,11 @@ function buildSchedule(grade){
    <div class="next-big">次回：${fmt(next)}</div>
    <div>目標日：${fmt(g)}　／　最終確認：${fmt(finalDay)}</div>
    <div class="schedule-row">${dates.map((d,i)=>`<span class="date-chip">${i===0?'次回 ':''}${fmt(d)}</span>`).join('')}</div>`;
- localStorage.setItem('gdl_v9_grade',grade);
- localStorage.setItem('gdl_v9_goal',goalEl.value);
- localStorage.setItem('gdl_v9_today',todayEl.value);
  return dates.map(iso);
 }
 
 document.getElementById('registerBtn').addEventListener('click',saveWeakness);
-todayEl.addEventListener('change',()=>{updateCountdown();renderDue();});
+todayEl.addEventListener('change',()=>{state.testToday=todayEl.value;saveState();updateCountdown();renderDue();});
 goalEl.addEventListener('change',()=>{
   updateCountdown();
   if(state.registered && state.grade){
@@ -300,12 +307,24 @@ goalEl.addEventListener('change',()=>{
   renderDue();
 });
 gradeBtns.forEach(btn=>btn.addEventListener('click',()=>{
+ if(!state.registered){registerStatus.textContent='先にSTEP 1で弱点を登録してください。';return;}
  gradeBtns.forEach(b=>b.classList.remove('active'));
  btn.classList.add('active');
- buildSchedule(btn.dataset.grade);
+ const grade=btn.dataset.grade;
+ const dates=buildSchedule(grade)||[];
+ state.grade=grade;state.lastSchedule=dates;state.nextDue=dates[0]||null;
+ state.goalDate=goalEl.value;
+ state.history.push({date:todayEl.value,grade});
+ saveState();
+ dueState.textContent='評価を保存しました';
+ dueDetail.textContent='次回復習日：'+(state.nextDue||'未設定').replaceAll('-','/');
+ // 評価後、次の復習日まではカードを閉じる。
+ renderDue();
 }));
 
 document.getElementById('resetBtn').addEventListener('click',()=>{
+ localStorage.removeItem(stateKey);
+ state={registered:false,nextDue:null,grade:null,history:[],lastSchedule:[],goalDate:null,testToday:null,words:[],causes:[]};
  localStorage.removeItem('gdl_v9_weakness');
  localStorage.removeItem('gdl_v9_grade');
  localStorage.removeItem('gdl_v9_goal');
@@ -319,16 +338,26 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
  registerStatus.textContent='まだ登録されていません。';
  gradeBtns.forEach(b=>b.classList.remove('active'));
  document.getElementById('scheduleBox').innerHTML='<h3>逆算スケジューリング</h3><div>×△○を押すと、目標日までの復習予定が表示されます。</div>';
- const now=new Date(); todayEl.value=iso(now); goalEl.value=iso(addDays(now,30)); updateCountdown(); renderDue();
+ const now=new Date(); todayEl.value=iso(now); goalEl.value=iso(addDays(now,30)); updateCountdown(); renderDue(); renderDebug();
 });
 
 initDates();
 loadState();
+if(validDate(state.testToday)) todayEl.value=state.testToday;
 loadWeakness();
 // 10号機の保存状態を優先し、旧9号機の表示用データを再利用しない。
 if(state.goalDate && validDate(state.goalDate)) goalEl.value=state.goalDate;
 updateCountdown();
 renderDue();
+renderDebug();
+if(state.grade){
+ const btn=gradeBtns.find(b=>b.dataset.grade===state.grade);
+ if(btn)btn.classList.add('active');
+ if(Array.isArray(state.lastSchedule) && state.lastSchedule.length){
+  const next=state.lastSchedule[0];
+  document.getElementById('scheduleBox').innerHTML='<h3>逆算スケジューリング</h3><div class="next-big">次回：'+next.replaceAll('-','/')+'</div><div>最終確認：'+state.lastSchedule[state.lastSchedule.length-1].replaceAll('-','/')+'</div>';
+ }
+}
 </script>
 
 </body>
