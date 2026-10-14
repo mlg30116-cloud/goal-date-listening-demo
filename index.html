@@ -160,11 +160,12 @@ function loadState(){try{const v=JSON.parse(localStorage.getItem(stateKey)||'nul
 function saveState(){try{localStorage.setItem(stateKey,JSON.stringify(state));}catch(e){registerStatus.textContent='保存できませんでした：ブラウザの保存設定をご確認ください。';}renderDebug();}
 function renderDebug(){document.getElementById('debugState').textContent='診断｜登録='+state.registered+'｜次回='+ (state.nextDue||'未設定')+'｜評価='+ (state.grade||'未設定')+'｜履歴='+state.history.length+'件｜テスト日='+todayEl.value+'｜保存キー='+stateKey;}
 function validDate(s){return /^\d{4}-\d{2}-\d{2}$/.test(s||'');}
-function renderDue(){
+function renderDue({keepReviewVisible=false}={}){
   const today=todayEl.value;
   const due=state.registered&&validDate(state.nextDue)&&validDate(today)&&today>=state.nextDue;
   openReviewBtn.classList.add('hidden');
-  reviewPanel.classList.add('hidden');
+  // 評価直後はSTEP 2を消さない。表示領域の縮小によるスクロール跳躍を防ぐ。
+  if(!keepReviewVisible) reviewPanel.classList.add('hidden');
   if(!state.registered){dueState.textContent='今日の復習：0件';dueDetail.textContent='まずSTEP 1で弱点を登録してください。';reviewPanel.classList.remove('hidden');return;}
   if(!state.nextDue){dueState.textContent='初回評価待ち：1件';dueDetail.textContent='STEP 2で一度評価すると次回復習日が決まります。';reviewPanel.classList.remove('hidden');return;}
   if(due){dueState.textContent='今日の復習：1件';dueDetail.textContent='予定日：'+state.nextDue.replaceAll('-','/')+(today>state.nextDue?'（期限超過）':'（本日）');openReviewBtn.classList.remove('hidden');reviewPanel.classList.remove('hidden');document.getElementById('reviewAnswer').open=false;}
@@ -318,8 +319,8 @@ gradeBtns.forEach(btn=>btn.addEventListener('click',()=>{
  saveState();
  dueState.textContent='評価を保存しました';
  dueDetail.textContent='次回復習日：'+(state.nextDue||'未設定').replaceAll('-','/');
- // 評価後、次の復習日まではカードを閉じる。
- renderDue();
+ // 評価直後は結果を見せたままにする。次回の読み込み時は期日まで非表示。
+ renderDue({keepReviewVisible:true});
 }));
 
 document.getElementById('resetBtn').addEventListener('click',()=>{
